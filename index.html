@@ -200,6 +200,7 @@ input[type=number],input[type=text]{width:100%;padding:10px 12px;border-radius:1
 #gate button.lk{background:none;color:#7a706b;font-size:14px;font-weight:700;margin-top:8px;padding:8px;text-decoration:underline}
 #gate .msg{font-size:13px;min-height:18px;margin-top:8px;color:#c4160a}#gate .msg.ok{color:#12803a}
 </style>
+<style>.rpc .rt.sl th,.rpc .rt.sl td{padding:6px 4px}.rpc .rt.sl td:not(:first-child),.rpc .rt.sl th:not(:first-child){text-align:right}.rpc .rt tr.gh td{background:#f3f3f3;font-weight:800;color:#111;font-size:11.5px}.rpc .rt tr.tt td{font-weight:800;font-size:14px;background:#fdecea}.rpc .dd{margin:0 0 8px;font-size:12px;color:#555}.rpc .vh{margin:0 0 6px;padding:8px 10px;background:#f7f5f3;border-radius:8px;font-size:13px}.rpc .wn{margin:6px 0 8px;font-size:20px}.rpc .pg+.pg{margin-top:28px}</style>
 </head>
 <body>
 <div id="sp"><div class="logo" role="img" aria-label="Terpel"></div><h1 aria-label="EDS ORENSE"></h1><p>Horarios y nómina</p></div>
@@ -306,14 +307,23 @@ function dayRows(ds,hs){return [
  {v:["Total de días",...ds.map(x=>x.t)],c:"sub"},
  {v:["Horas trabajadas",...hs.map(hh)],c:"tt"}]}
 function reportW(w){
- const [Y,Mo]=mk.split("-").map(Number),P=PA(mk),p=[P[w][0],P[w][1],sumP(P[w][0],P[w][1])],ds=dstat(mk,w);
- const rows=[...dayRows(ds,p.map(x=>x.h)),
-  {v:["Horas normales",...p.map(x=>hh(x.ord))]},{v:["Horas extra",...p.map(x=>hh(x.ext))]},{v:["Horas de noche",...p.map(x=>hh(x.noc))]},{v:["Horas en domingos y festivos",...p.map(x=>hh(x.dom))]},
-  {v:["Básico",...p.map(x=>money(x.bas))]},...detRows(p,Date.UTC(Y,Mo-1,1)>=Date.UTC(2027,6,1)?1:.9),
-  {v:["Total devengado",...p.map(x=>money(x.tot))],c:"sub"},{v:["Salud y pensión",...p.map(x=>money(-x.ded))]}];
- if(p.some(x=>x.aj))rows.push({v:["Ajustes",...p.map(x=>money(x.aj))]});
- rows.push({v:["Neto a pagar",...p.map(x=>money(x.net))],c:"tt"});
- return `<div class="logo rlg" role="img" aria-label="Terpel"></div><h1>EDS ORENSE</h1><p class="rs">Nómina de ${MN[Mo-1]} de ${Y}</p><h3>${NM[w]}</h3>${tbl(["",...PL.map((l,i)=>l+"<br><small>"+RG[i]+"</small>")],rows)}<p class="rn">Valor de la hora ordinaria: ${money(S.sm/210)} (salario ÷ 210). Recargo: pago adicional sobre la hora ordinaria por trabajar de noche (7 p. m. a 6 a. m.) o en domingo o festivo. Extra: hora que pasa del límite semanal, pagada completa con su recargo.</p>`;
+ const [Y,Mo]=mk.split("-").map(Number),P=PA(mk),ds=dstat(mk,w),dm=Date.UTC(Y,Mo-1,1)>=Date.UTC(2027,6,1)?1:.9,vh=S.sm/210,pc=n=>Math.round(n*100);
+ const R=(l,x,h,v,f)=>x[h]||x[v]?[l,hh(x[h]),money(vh*f),money(x[v])]:null;
+ const slip=i=>{const x=P[w][i],s=ds[i];
+  const rec=[R("Nocturno (+35%)",x,"hn","rn",.35),R("Dominical/festivo (+"+pc(dm)+"%)",x,"hdd","rdd",dm),R("Nocturno dom./festivo (+"+(pc(dm)+35)+"%)",x,"hdn","rdn",dm+.35)].filter(Boolean);
+  const ext=[R("Extra diurna (125%)",x,"hxd","xd",1.25),R("Extra nocturna (175%)",x,"hxn","xn",1.75),R("Extra diurna dom./festiva ("+(pc(dm)+125)+"%)",x,"hxdf","xdf",1.25+dm),R("Extra nocturna dom./festiva ("+(pc(dm)+175)+"%)",x,"hxnf","xnf",1.75+dm)].filter(Boolean);
+  const rows=[{v:["Salario básico de la quincena","","",money(x.bas)]}];
+  if(rec.length)rows.push({v:["Recargos (pago adicional)","Horas","Valor hora",""],c:"gh"},...rec.map(v=>({v})));
+  if(ext.length)rows.push({v:["Horas extra (pago completo)","Horas","Valor hora",""],c:"gh"},...ext.map(v=>({v})));
+  rows.push({v:["Total devengado","","",money(x.tot)],c:"sub"},{v:["Salud y pensión (8%)","","",money(-x.ded)]});
+  if(x.aj)rows.push({v:["Ajustes","","",money(x.aj)]});
+  rows.push({v:["Neto a pagar","","",money(x.net)],c:"tt"});
+  return `<h3>${PL[i]} <small>${RG[i]}</small></h3><p class="dd">${s.n} días de noche · ${s.f} festivos · ${s.d} normales · ${s.l} descansos · ${hh(x.h)} horas trabajadas</p>`+tbl(["Concepto","Horas","Valor hora","Total"],rows,"sl")};
+ const T=[P[w][0],P[w][1],sumP(P[w][0],P[w][1])],sr=[{v:["Total devengado",...T.map(x=>money(x.tot))]},{v:["Salud y pensión (8%)",...T.map(x=>money(-x.ded))]}];
+ if(T.some(x=>x.aj))sr.push({v:["Ajustes",...T.map(x=>money(x.aj))]});
+ sr.push({v:["Neto a pagar",...T.map(x=>money(x.net))],c:"tt"});
+ const hd=`<div class="logo rlg" role="img" aria-label="Terpel"></div><h1>EDS ORENSE</h1><p class="rs">Planilla de pago · ${MN[Mo-1]} de ${Y}</p><h2 class="wn">${NM[w]}</h2><p class="vh">Valor de la hora normal: <b>${money(vh)}</b> (salario básico ${money(S.sm)} ÷ 210 horas)</p>`;
+ return `<section class="pg">${hd}${slip(0)}</section><section class="pg"><p class="rs">EDS ORENSE · Planilla de pago · ${MN[Mo-1]} de ${Y} · <b>${NM[w]}</b></p>${slip(1)}<h3>Resumen del mes</h3>`+tbl(["","1ª quincena","2ª quincena","Mes completo"],sr,"sl")+`<p class="rn">Recargo: dinero extra por trabajar de noche (7 p. m. a 6 a. m.) o en domingo o festivo; se suma al salario básico. Hora extra: la que pasa del límite semanal; se paga completa con su recargo.</p></section>`;
 }
 const detRows=(p,dm)=>{const pc=n=>Math.round(n*100),c=(l,h,v)=>({v:[l,...p.map(x=>x[h]||x[v]?money(x[v])+"<br><small>"+hh(x[h])+" h</small>":"–")]});
  return [c("Recargo nocturno (+35%)","hn","rn"),c("Recargo dominical/festivo (+"+pc(dm)+"%)","hdd","rdd"),c("Recargo nocturno dom./festivo (+"+(pc(dm)+35)+"%)","hdn","rdn"),c("Extra diurna (hora al 125%)","hxd","xd"),c("Extra nocturna (hora al 175%)","hxn","xn"),c("Extra diurna dom./festiva (hora al "+(pc(dm)+125)+"%)","hxdf","xdf"),c("Extra nocturna dom./festiva (hora al "+(pc(dm)+175)+"%)","hxnf","xnf")].filter(r=>r.v.slice(1).some(t=>t!=="–"))};
@@ -481,15 +491,19 @@ async function savePdf(){
  if(!window.html2canvas||!window.jspdf){window.print();return}
  btn.disabled=true;btn.textContent='Generando…';
  try{
-  var cv=await html2canvas(el,{scale:2,backgroundColor:'#ffffff',useCORS:true,windowWidth:820,
-   onclone:function(d){var r=d.getElementById('rp');r.style.position='static';r.style.overflow='visible';r.style.height='auto';
-    var b=d.querySelector('.rpb');if(b)b.style.display='none';var w=d.querySelector('.rp .wm');if(w)w.style.display='none';d.body.classList.remove('rpo')}});
-  var P=window.jspdf.jsPDF,pdf=new P({unit:'pt',format:'a4'}),pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight(),m=28,uw=pw-2*m,uh=ph-2*m,k=cv.width/uw,sh=Math.floor(uh*k),y=0,first=true;
-  while(y<cv.height){
-   var h=Math.min(sh,cv.height-y),c=document.createElement('canvas');c.width=cv.width;c.height=h;
-   var x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,h);x.drawImage(cv,0,y,cv.width,h,0,0,cv.width,h);
-   if(!first)pdf.addPage();first=false;
-   pdf.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',m,m,uw,h/k);y+=h
+  var P=window.jspdf.jsPDF,pdf=new P({unit:'pt',format:'a4'}),pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight(),m=28,uw=pw-2*m,uh=ph-2*m,first=true;
+  var secs=el.querySelectorAll('.pg'),targets=secs.length?Array.prototype.slice.call(secs):[el];
+  for(var j=0;j<targets.length;j++){
+   var cv=await html2canvas(targets[j],{scale:2,backgroundColor:'#ffffff',useCORS:true,windowWidth:820,
+    onclone:function(d){var r=d.getElementById('rp');r.style.position='static';r.style.overflow='visible';r.style.height='auto';
+     var b=d.querySelector('.rpb');if(b)b.style.display='none';var w=d.querySelector('.rp .wm');if(w)w.style.display='none';d.body.classList.remove('rpo')}});
+   var k=cv.width/uw,sh=Math.floor(uh*k),y=0;
+   while(y<cv.height){
+    var h=Math.min(sh,cv.height-y),c=document.createElement('canvas');c.width=cv.width;c.height=h;
+    var x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,h);x.drawImage(cv,0,y,cv.width,h,0,0,cv.width,h);
+    if(!first)pdf.addPage();first=false;
+    pdf.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',m,m,uw,h/k);y+=h
+   }
   }
   var d=new Date(),n='EDS_Orense_'+d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)+'.pdf';
   await deliver(new File([pdf.output('blob')],n,{type:'application/pdf'}))
