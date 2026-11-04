@@ -207,8 +207,8 @@ input[type=number],input[type=text]{width:100%;padding:10px 12px;border-radius:1
 .rpc h3{margin-top:16px}
 .rpc .rt tr.gh td,.rpc .rt tr.tt td,.rpc .vh{background:none}
 .rpc p.vh{margin:6px 0 12px;padding:0}.rpc p.vh,.rpc p.vh b{font-size:10px!important;font-weight:400!important;color:#a8a8a8!important}
-.rpc .rt tr.tt td{border-top:1px solid #111;text-decoration:underline}
-.rpc .dd{margin:0 0 10px}.rpc .co{margin:0 0 3px}.rpc .cc{margin:0 0 8px;font-size:13px;color:#555}.rpc .rt small{color:#555}</style>
+.rpc .rt tr.tt td{border-top:1px solid #111}.rpc .hl{display:inline-block;background:#f6cfc9;padding:1px 7px;border-radius:2px}
+.rpc .rt.ng th,.rpc .rt.ng td{padding:4px 3px}.rpc .rt.ng th:first-child,.rpc .rt.ng td:first-child{min-width:0}.rpc .rt.rel th,.rpc .rt.rel td{text-align:left;padding:4px 6px}.rpc .dd{margin:0 0 10px}.rpc .co{margin:0 0 3px}.rpc .cc{margin:0 0 8px;font-size:13px;color:#555}.rpc .rt small{color:#555}</style>
 </head>
 <body>
 <div id="sp"><div class="logo" role="img" aria-label="Terpel"></div><h1 aria-label="EDS ORENSE"></h1><p>Horarios y nómina</p></div>
@@ -241,11 +241,11 @@ const FN=["LEONARDO ANTONIO SALCEDO CHIMA","JAIME ANTONIO ÁLVAREZ AMAYA","RICHA
 const CO=`<p class="co">Razón Social: <b>ESTACION ORENSE SAS</b></p><p class="co">Documento: <b>NI 901850197</b></p>`;
 const MN=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 const DN=["domingo","lunes","martes","miércoles","jueves","viernes","sábado"],DS=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
-const HOL=new Set("2026-10-12 2026-11-02 2026-11-16 2026-12-08 2026-12-25 2027-01-01 2027-01-11 2027-03-22 2027-03-25 2027-03-26 2027-05-01 2027-05-10 2027-05-31 2027-06-07 2027-07-05 2027-07-12 2027-07-20 2027-08-07 2027-08-16 2027-10-18 2027-11-01 2027-11-15 2027-12-08 2027-12-25".split(" "));
+const HOL=new Set("2026-10-12 2026-11-02 2026-11-16 2026-12-08 2026-12-25 2027-01-01 2027-01-11 2027-03-22 2027-03-25 2027-03-26 2027-05-01 2027-05-10 2027-05-31 2027-06-07 2027-07-05 2027-07-20 2027-08-07 2027-08-16 2027-10-18 2027-11-01 2027-11-15 2027-12-08 2027-12-25".split(" "));
 const T={D1:[12,0],D2:[12,0],D3R:[5,1],D3C:[13,1],N:[1,5],NU:[8,0],L:[0,0]},TO={...T,D2:[13,1],D3C:[12,0]};
 const IC={D1:"☀️",D2:"☀️",D3R:"🌇",D3C:"🌞",N:"🌙",NU:"☀️",L:"💤"},TX={D1:"Día",D2:"Día",D3R:"Tarde",D3C:"Día largo",N:"Noche",NU:"Día",L:"Descanso"};
 const CY=["N","L","D3R","D1","D2"],MIN=Date.UTC(2026,9,1),MAX=Date.UTC(2027,11,31),D=864e5;
-const old=t=>t<Date.UTC(2026,9,16);
+const old=()=>false;/* D2 siempre 12 h y D3C siempre 14 h (solo domingos), sin cambio de horario por fecha */
 const tm=(c,t)=>({D1:"6a–6p",D2:old(t)?"6a–8p":"6a–6p",D3R:"2p–8p",D3C:old(t)?"6a–6p":"6a–8p",N:"6p–6a",NU:"6a–2p",L:"libre"}[c]);
 const lg=(c,t)=>tm(c,t).replace(/(\d+)a/,"$1 am").replace(/(\d+)p/,"$1 pm").replace("–"," a ");
 const sh=(c,t)=>({D1:12,D2:old(t)?14:12,D3R:6,D3C:old(t)?12:14,N:12,NU:8,L:0}[c]);
@@ -291,14 +291,17 @@ function calc(k){
   }
   return q})
 }
-function pay(r,Hr,adj){
- const vh=S.sm/210,f=r.h?Math.min(1,Hr/r.h):0,more=Math.max(0,Hr-r.h);
- const bas=S.sm/2*f,rn=r.rn*f,rd=r.rd*f,ex=r.ex*f+more*vh*1.25,tot=bas+rn+rd+ex,ded=Math.round(S.sm*.08)/2,aj=adj.reduce((s,a)=>s+a.v,0);
- const dt=Object.fromEntries(DK.map(k=>[k,(r[k]||0)*f]));dt.hxd+=more;dt.xd+=more*vh*1.25;return{...dt,h:Hr,ord:r.ord*f,ext:r.ext*f+more,noc:r.noc*f,dom:r.dom*f,bas,rn,rd,ex,tot,ded,aj,net:tot-ded+aj}
+function pay(r,Hr,adj,i){
+ const vh=S.sm/210,f=r.h?Math.min(1,Hr/r.h):0,more=Math.max(0,Hr-r.h),R=Math.round;
+ const bas=f===1?(i===0?Math.floor(S.sm/2):S.sm-Math.floor(S.sm/2)):R(S.sm/2*f);
+ const dt=Object.fromEntries(DK.map(k=>[k,(r[k]||0)*f]));dt.hxd+=more;
+ for(const k of ["rdd","rdn","xd","xn","xdf","xnf"])dt[k]=R(dt[k]+(k==="xd"?more*vh*1.25:0));
+ const rn=R(r.rn*f),rd=dt.rdd+dt.rdn,ex=dt.xd+dt.xn+dt.xdf+dt.xnf,tot=bas+rn+rd+ex,ded=R(S.sm*.08)/2,aj=adj.reduce((t,a)=>t+a.v,0);
+ return{...dt,h:Hr,ord:r.ord*f,ext:r.ext*f+more,noc:r.noc*f,dom:r.dom*f,bas,rn,rd,ex,tot,ded,aj,net:tot-ded+aj}
 }
 const sumP=(a,b)=>{const o={};for(const k in a)o[k]=a[k]+b[k];return o};
 const ch=(t,w)=>S.ov[iso(t)+"|"+w]?" ch":"";
-const PA=k=>calc(k).map((q,w)=>[0,1].map(i=>{const kk=k+"|"+w+"|"+i,hr=S.real[kk]!==undefined&&S.real[kk]!==""?+S.real[kk]:q[i].h;return pay(q[i],hr,S.adj[kk]||[])}));
+const PA=k=>calc(k).map((q,w)=>[0,1].map(i=>{const kk=k+"|"+w+"|"+i,hr=S.real[kk]!==undefined&&S.real[kk]!==""?+S.real[kk]:q[i].h;return pay(q[i],hr,S.adj[kk]||[],i)}));
 const d31=t=>new Date(t).getUTCDate()===31?" d31":"";
 function dstat(k,w){
  const [Y,Mo]=k.split("-").map(Number),nd=Math.min(30,new Date(Date.UTC(Y,Mo,0)).getUTCDate());
@@ -306,7 +309,7 @@ function dstat(k,w){
  for(let d=1;d<=nd;d++){const t=Date.UTC(Y,Mo-1,d),c=codeOf(t,w),x=r[d<=15?0:1];x.t++;if(c==="L")x.l++;else if(c==="N")x.n++;else if(isF(t))x.f++;else x.d++}
  return [r[0],r[1],sumP(r[0],r[1])];
 }
-const tbl=(head,rows,cls)=>`<div class="rw"><table class="rt ${cls||""}"><thead><tr>${head.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr class="${r.c||""}">${r.v.map(v=>`<td>${v}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+const tbl=(head,rows,cls)=>`<div class="rw"><table class="rt ${cls||""}"><thead><tr>${head.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr class="${r.c||""}">${r.v.map((v,j)=>`<td>${r.c==="tt"&&j>0&&v!==""?`<span class="hl">${v}</span>`:v}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
 const PL=["1ª quincena","2ª quincena","Mes completo"];
 const RG=["del 1 al 15","del 16 al 30","del 1 al 30"];
 function dayRows(ds,hs){return [
@@ -340,15 +343,32 @@ function reportW(w){
 const detRows=(p,dm)=>{const pc=n=>Math.round(n*100),c=(l,h,v)=>({v:[l,...p.map(x=>x[h]||x[v]?money(x[v])+"<br><small>"+hh(x[h])+" h</small>":"–")]});
  return [c("Recargo nocturno (+35%)","hn","rn"),c("Recargo dominical/festivo (+"+pc(dm)+"%)","hdd","rdd"),c("Recargo nocturno dom./festivo (+"+(pc(dm)+35)+"%)","hdn","rdn"),c("Extra diurna (hora al 125%)","hxd","xd"),c("Extra nocturna (hora al 175%)","hxn","xn"),c("Extra diurna dom./festiva (hora al "+(pc(dm)+125)+"%)","hxdf","xdf"),c("Extra nocturna dom./festiva (hora al "+(pc(dm)+175)+"%)","hxnf","xnf")].filter(r=>r.v.slice(1).some(t=>t!=="–"))};
 function reportAll(){
- const [Y,Mo]=mk.split("-").map(Number),P=PA(mk),DS=NM.map((_,w)=>dstat(mk,w));
- let out=`<div class="logo rlg" role="img" aria-label="Terpel"></div><h1>EDS ORENSE</h1>${CO}<p>Nómina general: ${PL[Q]}</p><p>Periodo: ${RG[Q]} de ${MN[Mo-1]} de ${Y}</p>`;
- for(const i of (Q<2?[Q]:[0,1,2])){
-  const rows=NM.map((n,w)=>{const p=i<2?P[w][i]:sumP(P[w][0],P[w][1]),s=DS[w][i];return {v:[FN[w]+"<br><small>CC: "+CCN[w]+"</small>",s.n,s.f,s.d,s.l,hh(p.h),money(p.tot),money(p.net)],p,s}});
-  const T0=rows.reduce((a,r)=>({n:a.n+r.s.n,f:a.f+r.s.f,d:a.d+r.s.d,l:a.l+r.s.l,h:a.h+r.p.h,t:a.t+r.p.tot,e:a.e+r.p.net}),{n:0,f:0,d:0,l:0,h:0,t:0,e:0});
-  rows.push({v:["Total",T0.n,T0.f,T0.d,T0.l,hh(T0.h),money(T0.t),money(T0.e)],c:"tt"});
-  out+=`<h3>${PL[i]}: ${RG[i]}</h3>`+tbl(["Trabajador","Noches","Festivos","Normales","Descansos","Horas","Devengado","Neto"],rows,"gen");
- }
- return out;
+ const [Y,Mo]=mk.split("-").map(Number),P=PA(mk),DSx=NM.map((_,w)=>dstat(mk,w)),dm=Date.UTC(Y,Mo-1,1)>=Date.UTC(2027,6,1)?1:.9,pc=n=>Math.round(n*100);
+ const per=Q<2?PL[Q]+", "+RG[Q]+" de "+MN[Mo-1]+" de "+Y:"Mes completo, "+MN[Mo-1]+" de "+Y;
+ const hd=`<div class="logo rlg" role="img" aria-label="Terpel"></div><h1>EDS ORENSE</h1>${CO}<p>Nómina general de personal: ${per}</p>`;
+ const rel=`<h3>Relación de trabajadores</h3>`+tbl(["No.","Nombre completo","Documento"],NM.map((n,w)=>({v:[w+1,FN[w],"CC: "+CCN[w]]})),"rel");
+ const z=v=>v?money(v):"–",hz=v=>v?hh(v):"–";
+ const sec=i=>{
+  const X=NM.map((_,w)=>i<2?P[w][i]:sumP(P[w][0],P[w][1])),Sd=NM.map((_,w)=>DSx[w][i]);
+  const dl=(l,k)=>({v:[l,...Sd.map(x=>x[k]),Sd.reduce((a,x)=>a+x[k],0)]});
+  const ml=(l,f,fm,c)=>({v:[l,...X.map(x=>fm(f(x))),fm(X.reduce((a,x)=>a+f(x),0))],c});
+  const g=l=>({v:[l,...NM.map(()=>""),""],c:"gh"});
+  const rows=[g("Días del periodo"),dl("Días de noche","n"),dl("Días festivos","f"),dl("Días normales","d"),dl("Descansos","l"),
+   ml("Horas ordinarias",x=>x.ord,hz),ml("Horas extra",x=>x.ext,hz),ml("Horas trabajadas",x=>x.h,hh,"sub"),
+   g("Devengado"),ml("Salario básico",x=>x.bas,z),ml("Recargo nocturno (+35%)",x=>x.rn,z),
+   ml("Recargo dominical/festivo (+"+pc(dm)+"%)",x=>x.rdd,z),ml("Recargo nocturno dom./fest. (+"+(pc(dm)+35)+"%)",x=>x.rdn,z),
+   ml("Extra diurna (125%)",x=>x.xd,z),ml("Extra nocturna (175%)",x=>x.xn,z),
+   ml("Extra diurna dom./fest. ("+(pc(dm)+125)+"%)",x=>x.xdf,z),ml("Extra nocturna dom./fest. ("+(pc(dm)+175)+"%)",x=>x.xnf,z),
+   ml("Total devengado",x=>x.tot,money,"sub"),
+   g("Deducciones y ajustes"),ml("Salud y pensión (cuota fija)",x=>-x.ded,money)];
+  if(X.some(x=>x.aj))rows.push(ml("Ajustes",x=>x.aj,money));
+  rows.push(ml("Neto a pagar",x=>x.net,money,"tt"));
+  return `<h3>${PL[i]}: ${RG[i]}</h3>`+tbl(["Concepto",...NM,"Total"],rows,"sl ng")
+ };
+ const pg=x=>`<section class="pg">${x}</section>`;
+ if(Q<2)return pg(hd+rel+sec(Q));
+ const mini=`<h1>EDS ORENSE</h1><p>Nómina general de personal: ${per}</p>`;
+ return pg(hd+rel+sec(0))+pg(mini+sec(1))+pg(mini+sec(2));
 }
 const openRp=x=>{$("rpc").innerHTML=x==="all"?reportAll():reportW(+x);$("rp").hidden=false;$("rp").scrollTop=0;document.body.classList.add("rpo");window._pdfFile=null};
 const closeRp=()=>{$("rp").hidden=true;document.body.classList.remove("rpo")};
@@ -508,7 +528,7 @@ async function savePdf(){
   var secs=el.querySelectorAll('.pg'),targets=secs.length?Array.prototype.slice.call(secs):[el];
   for(var j=0;j<targets.length;j++){
    var cv=await html2canvas(targets[j],{scale:2,backgroundColor:'#ffffff',useCORS:true,windowWidth:820,
-    onclone:function(d){var r=d.getElementById('rp');r.style.position='static';r.style.overflow='visible';r.style.height='auto';
+    onclone:function(d){var r=d.getElementById('rp');r.style.position='static';r.style.overflow='visible';r.style.height='auto';d.querySelectorAll('.rw').forEach(function(e){e.style.overflow='visible'});
      var b=d.querySelector('.rpb');if(b)b.style.display='none';var w=d.querySelector('.rp .wm');if(w)w.style.display='none';d.body.classList.remove('rpo')}});
    var k=cv.width/uw,sh=Math.floor(uh*k),y=0;
    while(y<cv.height){
