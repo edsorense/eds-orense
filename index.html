@@ -200,7 +200,7 @@ input[type=number],input[type=text]{width:100%;padding:10px 12px;border-radius:1
 #gate button.lk{background:none;color:#7a706b;font-size:14px;font-weight:700;margin-top:8px;padding:8px;text-decoration:underline}
 #gate .msg{font-size:13px;min-height:18px;margin-top:8px;color:#c4160a}#gate .msg.ok{color:#12803a}
 </style>
-<style>.rpc .rt.sl th,.rpc .rt.sl td{padding:6px 4px}.rpc .rt.sl td:not(:first-child),.rpc .rt.sl th:not(:first-child){text-align:right}.rpc .rt tr.gh td{background:#f3f3f3;font-weight:800;color:#111;font-size:11.5px}.rpc .rt tr.tt td{font-weight:800;font-size:14px;background:#fdecea}.rpc .dd{margin:0 0 8px;font-size:12px;color:#555}.rpc .vh{margin:0 0 6px;padding:8px 10px;background:#f7f5f3;border-radius:8px;font-size:13px}.rpc .wn{margin:6px 0 8px;font-size:20px}.rpc .pg+.pg{margin-top:28px}</style>
+<style>.rpc .rt.sl th,.rpc .rt.sl td{padding:6px 4px}.rpc .rt.sl td:not(:first-child),.rpc .rt.sl th:not(:first-child){text-align:right}.rpc .rt tr.gh td{background:#f3f3f3;font-weight:800;color:#111;font-size:11.5px}.rpc .rt tr.tt td{font-weight:800;font-size:14px;background:#fdecea}.rpc .dd{margin:0 0 8px;font-size:12px;color:#555}.rpc .vh{margin:0 0 6px;padding:8px 10px;background:#f7f5f3;border-radius:8px;font-size:13px}.rpc .wn{margin:6px 0 8px;font-size:20px}.rpc .pg+.pg{margin-top:28px}.rpc .co{margin:2px 0 0;font-size:13px;color:#333}.rpc .cc{margin:0 0 8px;font-size:13px;color:#555}.rpc .rt small{color:#555}</style>
 </head>
 <body>
 <div id="sp"><div class="logo" role="img" aria-label="Terpel"></div><h1 aria-label="EDS ORENSE"></h1><p>Horarios y nómina</p></div>
@@ -229,6 +229,8 @@ input[type=number],input[type=text]{width:100%;padding:10px 12px;border-radius:1
 <div class="rp" id="rp" hidden><div class="rpb"><button class="btn g s" data-rpx="1">Cerrar</button><button class="btn s" data-rpp="1">Guardar PDF</button></div><div class="wm" aria-hidden="true"></div><div class="rpc" id="rpc"></div></div>
 <script>
 const NM=["Leonardo","Jaime","Richard","Pedro","Juan","Nelson"];
+const FN=["LEONARDO ANTONIO SALCEDO CHIMA","JAIME ANTONIO ÁLVAREZ AMAYA","RICHARD","PEDRO LUIS PINTO COGOLLO","JUAN GABRIEL PACHECO LÓPEZ","NELSON CABALLERO"],CCN=["1068656383","92601454","Pendiente","1067890325","1068659193","No disponible"];
+const CO=`<p class="co">Razón Social: <b>ESTACION ORENSE SAS</b></p><p class="co">Documento: <b>NI 901850197</b></p>`;
 const MN=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 const DN=["domingo","lunes","martes","miércoles","jueves","viernes","sábado"],DS=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 const HOL=new Set("2026-10-12 2026-11-02 2026-11-16 2026-12-08 2026-12-25 2027-01-01 2027-01-11 2027-03-22 2027-03-25 2027-03-26 2027-05-01 2027-05-10 2027-05-31 2027-06-07 2027-07-05 2027-07-12 2027-07-20 2027-08-07 2027-08-16 2027-10-18 2027-11-01 2027-11-15 2027-12-08 2027-12-25".split(" "));
@@ -322,21 +324,23 @@ function reportW(w){
  const T=[P[w][0],P[w][1],sumP(P[w][0],P[w][1])],sr=[{v:["Total devengado",...T.map(x=>money(x.tot))]},{v:["Salud y pensión (cuota fija)",...T.map(x=>money(-x.ded))]}];
  if(T.some(x=>x.aj))sr.push({v:["Ajustes",...T.map(x=>money(x.aj))]});
  sr.push({v:["Neto a pagar",...T.map(x=>money(x.net))],c:"tt"});
- const hd=`<div class="logo rlg" role="img" aria-label="Terpel"></div><h1>EDS ORENSE</h1><p class="rs">Planilla de pago · ${MN[Mo-1]} de ${Y}</p><h2 class="wn">${NM[w]}</h2><p class="vh">Valor de la hora normal: <b>${money(vh)}</b> (salario básico ${money(S.sm)} ÷ 210 horas)</p>`;
- return `<section class="pg">${hd}${slip(0)}</section><section class="pg"><p class="rs">EDS ORENSE · Planilla de pago · ${MN[Mo-1]} de ${Y} · <b>${NM[w]}</b></p>${slip(1)}<h3>Resumen del mes</h3>`+tbl(["","1ª quincena","2ª quincena","Mes completo"],sr,"sl")+`<p class="rn">Recargo: dinero extra por trabajar de noche (7 p. m. a 6 a. m.) o en domingo o festivo; se suma al salario básico. Hora extra: la que pasa del límite semanal; se paga completa con su recargo.</p></section>`;
+ const per=PL[Q]+" · "+(Q<2?RG[Q]+" · ":"")+MN[Mo-1]+" de "+Y,who=`<h2 class="wn">${FN[w]}</h2><p class="cc">CC: ${CCN[w]}</p>`;
+ const hd=`<div class="logo rlg" role="img" aria-label="Terpel"></div><h1>EDS ORENSE</h1>${CO}<p class="rs">Planilla de pago · ${per}</p>${who}<p class="vh">Valor de la hora normal: <b>${money(vh)}</b> (salario básico ${money(S.sm)} ÷ 210 horas)</p>`;
+ if(Q<2)return `<section class="pg">${hd}${slip(Q)}</section>`;
+ return `<section class="pg">${hd}${slip(0)}</section><section class="pg"><p class="rs">EDS ORENSE · Planilla de pago · ${MN[Mo-1]} de ${Y} · <b>${FN[w]}</b> · CC: ${CCN[w]}</p>${slip(1)}<h3>Resumen del mes</h3>`+tbl(["","1ª quincena","2ª quincena","Mes completo"],sr,"sl")+`</section>`;
 }
 const detRows=(p,dm)=>{const pc=n=>Math.round(n*100),c=(l,h,v)=>({v:[l,...p.map(x=>x[h]||x[v]?money(x[v])+"<br><small>"+hh(x[h])+" h</small>":"–")]});
  return [c("Recargo nocturno (+35%)","hn","rn"),c("Recargo dominical/festivo (+"+pc(dm)+"%)","hdd","rdd"),c("Recargo nocturno dom./festivo (+"+(pc(dm)+35)+"%)","hdn","rdn"),c("Extra diurna (hora al 125%)","hxd","xd"),c("Extra nocturna (hora al 175%)","hxn","xn"),c("Extra diurna dom./festiva (hora al "+(pc(dm)+125)+"%)","hxdf","xdf"),c("Extra nocturna dom./festiva (hora al "+(pc(dm)+175)+"%)","hxnf","xnf")].filter(r=>r.v.slice(1).some(t=>t!=="–"))};
 function reportAll(){
  const [Y,Mo]=mk.split("-").map(Number),P=PA(mk),DS=NM.map((_,w)=>dstat(mk,w));
- let out=`<div class="logo rlg" role="img" aria-label="Terpel"></div><h1>EDS ORENSE</h1><p class="rs">Nómina general de ${MN[Mo-1]} de ${Y}</p>`;
- for(let i=0;i<3;i++){
-  const rows=NM.map((n,w)=>{const p=i<2?P[w][i]:sumP(P[w][0],P[w][1]),s=DS[w][i];return {v:[n,s.n,s.f,s.d,s.l,hh(p.h),money(p.tot),money(p.net)],p,s}});
+ let out=`<div class="logo rlg" role="img" aria-label="Terpel"></div><h1>EDS ORENSE</h1>${CO}<p class="rs">Nómina general · ${PL[Q]} · ${MN[Mo-1]} de ${Y}</p>`;
+ for(const i of (Q<2?[Q]:[0,1,2])){
+  const rows=NM.map((n,w)=>{const p=i<2?P[w][i]:sumP(P[w][0],P[w][1]),s=DS[w][i];return {v:[FN[w]+"<br><small>CC: "+CCN[w]+"</small>",s.n,s.f,s.d,s.l,hh(p.h),money(p.tot),money(p.net)],p,s}});
   const T0=rows.reduce((a,r)=>({n:a.n+r.s.n,f:a.f+r.s.f,d:a.d+r.s.d,l:a.l+r.s.l,h:a.h+r.p.h,t:a.t+r.p.tot,e:a.e+r.p.net}),{n:0,f:0,d:0,l:0,h:0,t:0,e:0});
   rows.push({v:["Total",T0.n,T0.f,T0.d,T0.l,hh(T0.h),money(T0.t),money(T0.e)],c:"tt"});
   out+=`<h3>${PL[i]} <small>${RG[i]}</small></h3>`+tbl(["Trabajador","Noches","Festivos","Normales","Descansos","Horas","Devengado","Neto"],rows,"gen");
  }
- return out+``;
+ return out;
 }
 const openRp=x=>{$("rpc").innerHTML=x==="all"?reportAll():reportW(+x);$("rp").hidden=false;$("rp").scrollTop=0;document.body.classList.add("rpo");window._pdfFile=null};
 const closeRp=()=>{$("rp").hidden=true;document.body.classList.remove("rpo")};
