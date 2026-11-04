@@ -325,7 +325,7 @@ function reportAll(){
  }
  return out+``;
 }
-const openRp=x=>{$("rpc").innerHTML=x==="all"?reportAll():reportW(+x);$("rp").hidden=false;$("rp").scrollTop=0;document.body.classList.add("rpo")};
+const openRp=x=>{$("rpc").innerHTML=x==="all"?reportAll():reportW(+x);$("rp").hidden=false;$("rp").scrollTop=0;document.body.classList.add("rpo");window._pdfFile=null};
 const closeRp=()=>{$("rp").hidden=true;document.body.classList.remove("rpo")};
 const pill=(w,t)=>{const c=codeOf(t,w);return `<button class="cell ${c}${ch(t,w)}${d31(t)}" data-w="${w}" data-t="${t}" aria-label="${NM[w]}, ${TX[c]}"><i class="dot"></i><small>${tm(c,t)}</small></button>`};
 const dcard=(w,t)=>{const c=codeOf(t,w),h=sh(c,t);return `<button class="cell dcard ${c}${ch(t,w)}${d31(t)}" data-w="${w}" data-t="${t}"><span class="bar"></span><span class="tx"><b>${NM[w]}</b><small>${c==="L"?"Descanso":TX[c]+", "+lg(c,t)}</small></span><span class="hr">${h?h+" h":""}</span></button>`};
@@ -431,7 +431,7 @@ document.addEventListener("click",e=>{
  else if(X.rm){const j=X.rm.lastIndexOf("|"),k=X.rm.slice(0,j);S.adj[k].splice(+X.rm.slice(j+1),1);save();renderN()}
  else if(X.pdf!==undefined)openRp(X.pdf);
  else if(X.rpx)closeRp();
- else if(X.rpp)window.print();
+ else if(X.rpp)savePdf();
  else if(b.id==="rs"){S.ov={};S.real={};S.adj={};save();render()}
  else if(b.id==="th"){const r=document.documentElement,dk=r.dataset.theme==="dark"||(!r.dataset.theme&&matchMedia("(prefers-color-scheme:dark)").matches);S.theme=dk?"light":"dark";r.dataset.theme=S.theme;save()}
 });
@@ -458,6 +458,41 @@ sp.addEventListener("click",lift);setTimeout(lift,rm?600:6200);
 <button type="submit" id="gb">Entrar</button>
 <button type="button" class="lk" id="gr">¿Olvidaste tu contraseña?</button>
 <div class="msg" id="gm"></div></form></div>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+async function savePdf(){
+ var btn=document.querySelector('[data-rpp]'),el=document.getElementById('rpc'),txt='Guardar PDF';
+ function done(){btn.disabled=false;btn.textContent=txt}
+ async function deliver(f){
+  try{
+   if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:f.name});window._pdfFile=null;done();return}
+  }catch(e){
+   if(e&&e.name==='AbortError'){done();return}
+   window._pdfFile=f;btn.disabled=false;btn.textContent='Toca otra vez para guardar';return
+  }
+  var u=URL.createObjectURL(f),a=document.createElement('a');a.href=u;a.download=f.name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(function(){URL.revokeObjectURL(u)},60000);done()
+ }
+ if(window._pdfFile){var f0=window._pdfFile;btn.disabled=true;await deliver(f0);return}
+ if(!window.html2canvas||!window.jspdf){window.print();return}
+ btn.disabled=true;btn.textContent='Generando…';
+ try{
+  var cv=await html2canvas(el,{scale:2,backgroundColor:'#ffffff',useCORS:true,windowWidth:820,
+   onclone:function(d){var r=d.getElementById('rp');r.style.position='static';r.style.overflow='visible';r.style.height='auto';
+    var b=d.querySelector('.rpb');if(b)b.style.display='none';var w=d.querySelector('.rp .wm');if(w)w.style.display='none';d.body.classList.remove('rpo')}});
+  var P=window.jspdf.jsPDF,pdf=new P({unit:'pt',format:'a4'}),pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight(),m=28,uw=pw-2*m,uh=ph-2*m,k=cv.width/uw,sh=Math.floor(uh*k),y=0,first=true;
+  while(y<cv.height){
+   var h=Math.min(sh,cv.height-y),c=document.createElement('canvas');c.width=cv.width;c.height=h;
+   var x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,h);x.drawImage(cv,0,y,cv.width,h,0,0,cv.width,h);
+   if(!first)pdf.addPage();first=false;
+   pdf.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',m,m,uw,h/k);y+=h
+  }
+  var d=new Date(),n='EDS_Orense_'+d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)+'.pdf';
+  await deliver(new File([pdf.output('blob')],n,{type:'application/pdf'}))
+ }catch(e){done();window.print()}
+}
+</script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="firebase-config.js"></script>
