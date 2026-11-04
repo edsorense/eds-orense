@@ -257,16 +257,17 @@ for(let i=0;i<15;i++){const y=2026+Math.floor((9+i)/12),m=(9+i)%12,o=document.cr
 mesSel.value=mk;
 function baseCode(t,w){const wd=new Date(t).getUTCDay();if(w===5)return wd===0?"L":"NU";const k=Math.round((t-MIN)/D),c=CY[(w+k)%5];return c==="D3R"&&wd===0?"D3C":c}
 const codeOf=(t,w)=>S.ov[iso(t)+"|"+w]||baseCode(t,w);
+const DK=["hn","hdd","hdn","hxd","hxn","hxdf","hxnf","rdd","rdn","xd","xn","xdf","xnf"],Z0=()=>Object.fromEntries(DK.map(k=>[k,0]));
 function calc(k){
  const [Y,Mo]=k.split("-").map(Number),end=Date.UTC(Y,Mo,0)+D,vh=S.sm/210;
  const put=(r,t,dd,nn,od,on,ed,en)=>{
   const dm=t>=Date.UTC(2027,6,1)?1:.9;
   r.h+=dd+nn;r.ord+=od+on;r.ext+=ed+en;r.noc+=nn;
-  if(isF(t)){r.dom+=dd+nn;r.rd+=od*vh*dm+on*vh*(dm+.35);r.ex+=ed*vh*(1.25+dm)+en*vh*(1.75+dm)}
-  else{r.rn+=on*vh*.35;r.ex+=ed*vh*1.25+en*vh*1.75}
+  if(isF(t)){r.hdd+=od;r.hdn+=on;r.rdd+=od*vh*dm;r.rdn+=on*vh*(dm+.35);r.hxdf+=ed;r.hxnf+=en;r.xdf+=ed*vh*(1.25+dm);r.xnf+=en*vh*(1.75+dm);r.dom+=dd+nn;r.rd+=od*vh*dm+on*vh*(dm+.35);r.ex+=ed*vh*(1.25+dm)+en*vh*(1.75+dm)}
+  else{r.hn+=on;r.hxd+=ed;r.hxn+=en;r.xd+=ed*vh*1.25;r.xn+=en*vh*1.75;r.rn+=on*vh*.35;r.ex+=ed*vh*1.25+en*vh*1.75}
  };
  return NM.map((_,w)=>{
-  const q=[0,1].map(()=>({h:0,ord:0,ext:0,noc:0,dom:0,rn:0,rd:0,ex:0}));let ac=0,pv=null;
+  const q=[0,1].map(()=>({h:0,ord:0,ext:0,noc:0,dom:0,rn:0,rd:0,ex:0,...Z0()}));let ac=0,pv=null;
   for(let t=MIN;t<=end;t+=D){
    const d=new Date(t),wd=d.getUTCDay(),dn=d.getUTCDate(),code=codeOf(t,w),tb=old(t)?TO:T;let [dd,nn]=tb[code];
    const cr=pv==="N"?6:0;
@@ -282,7 +283,7 @@ function calc(k){
 function pay(r,Hr,adj){
  const vh=S.sm/210,f=r.h?Math.min(1,Hr/r.h):0,more=Math.max(0,Hr-r.h);
  const bas=S.sm/2*f,rn=r.rn*f,rd=r.rd*f,ex=r.ex*f+more*vh*1.25,tot=bas+rn+rd+ex,ded=tot*.08,aj=adj.reduce((s,a)=>s+a.v,0);
- return{h:Hr,ord:r.ord*f,ext:r.ext*f+more,noc:r.noc*f,dom:r.dom*f,bas,rn,rd,ex,tot,ded,aj,net:tot-ded+aj}
+ const dt=Object.fromEntries(DK.map(k=>[k,(r[k]||0)*f]));dt.hxd+=more;dt.xd+=more*vh*1.25;return{...dt,h:Hr,ord:r.ord*f,ext:r.ext*f+more,noc:r.noc*f,dom:r.dom*f,bas,rn,rd,ex,tot,ded,aj,net:tot-ded+aj}
 }
 const sumP=(a,b)=>{const o={};for(const k in a)o[k]=a[k]+b[k];return o};
 const ch=(t,w)=>S.ov[iso(t)+"|"+w]?" ch":"";
@@ -308,12 +309,14 @@ function reportW(w){
  const [Y,Mo]=mk.split("-").map(Number),P=PA(mk),p=[P[w][0],P[w][1],sumP(P[w][0],P[w][1])],ds=dstat(mk,w);
  const rows=[...dayRows(ds,p.map(x=>x.h)),
   {v:["Horas normales",...p.map(x=>hh(x.ord))]},{v:["Horas extra",...p.map(x=>hh(x.ext))]},{v:["Horas de noche",...p.map(x=>hh(x.noc))]},{v:["Horas en domingos y festivos",...p.map(x=>hh(x.dom))]},
-  {v:["Básico",...p.map(x=>money(x.bas))]},{v:["Recargos",...p.map(x=>money(x.rn+x.rd))]},{v:["Extras",...p.map(x=>money(x.ex))]},
+  {v:["Básico",...p.map(x=>money(x.bas))]},...detRows(p,Date.UTC(Y,Mo-1,1)>=Date.UTC(2027,6,1)?1:.9),
   {v:["Total devengado",...p.map(x=>money(x.tot))],c:"sub"},{v:["Salud y pensión",...p.map(x=>money(-x.ded))]}];
  if(p.some(x=>x.aj))rows.push({v:["Ajustes",...p.map(x=>money(x.aj))]});
  rows.push({v:["Neto a pagar",...p.map(x=>money(x.net))],c:"tt"});
- return `<div class="logo rlg" role="img" aria-label="Terpel"></div><h1>EDS ORENSE</h1><p class="rs">Nómina de ${MN[Mo-1]} de ${Y}</p><h3>${NM[w]}</h3>${tbl(["",...PL.map((l,i)=>l+"<br><small>"+RG[i]+"</small>")],rows)}`;
+ return `<div class="logo rlg" role="img" aria-label="Terpel"></div><h1>EDS ORENSE</h1><p class="rs">Nómina de ${MN[Mo-1]} de ${Y}</p><h3>${NM[w]}</h3>${tbl(["",...PL.map((l,i)=>l+"<br><small>"+RG[i]+"</small>")],rows)}<p class="rn">Valor de la hora ordinaria: ${money(S.sm/210)} (salario ÷ 210). Recargo: pago adicional sobre la hora ordinaria por trabajar de noche (7 p. m. a 6 a. m.) o en domingo o festivo. Extra: hora que pasa del límite semanal, pagada completa con su recargo.</p>`;
 }
+const detRows=(p,dm)=>{const pc=n=>Math.round(n*100),c=(l,h,v)=>({v:[l,...p.map(x=>x[h]||x[v]?money(x[v])+"<br><small>"+hh(x[h])+" h</small>":"–")]});
+ return [c("Recargo nocturno (+35%)","hn","rn"),c("Recargo dominical/festivo (+"+pc(dm)+"%)","hdd","rdd"),c("Recargo nocturno dom./festivo (+"+(pc(dm)+35)+"%)","hdn","rdn"),c("Extra diurna (hora al 125%)","hxd","xd"),c("Extra nocturna (hora al 175%)","hxn","xn"),c("Extra diurna dom./festiva (hora al "+(pc(dm)+125)+"%)","hxdf","xdf"),c("Extra nocturna dom./festiva (hora al "+(pc(dm)+175)+"%)","hxnf","xnf")].filter(r=>r.v.slice(1).some(t=>t!=="–"))};
 function reportAll(){
  const [Y,Mo]=mk.split("-").map(Number),P=PA(mk),DS=NM.map((_,w)=>dstat(mk,w));
  let out=`<div class="logo rlg" role="img" aria-label="Terpel"></div><h1>EDS ORENSE</h1><p class="rs">Nómina general de ${MN[Mo-1]} de ${Y}</p>`;
