@@ -283,7 +283,7 @@ function calc(k){
 }
 function pay(r,Hr,adj){
  const vh=S.sm/210,f=r.h?Math.min(1,Hr/r.h):0,more=Math.max(0,Hr-r.h);
- const bas=S.sm/2*f,rn=r.rn*f,rd=r.rd*f,ex=r.ex*f+more*vh*1.25,tot=bas+rn+rd+ex,ded=tot*.08,aj=adj.reduce((s,a)=>s+a.v,0);
+ const bas=S.sm/2*f,rn=r.rn*f,rd=r.rd*f,ex=r.ex*f+more*vh*1.25,tot=bas+rn+rd+ex,ded=Math.round(S.sm*.08)/2,aj=adj.reduce((s,a)=>s+a.v,0);
  const dt=Object.fromEntries(DK.map(k=>[k,(r[k]||0)*f]));dt.hxd+=more;dt.xd+=more*vh*1.25;return{...dt,h:Hr,ord:r.ord*f,ext:r.ext*f+more,noc:r.noc*f,dom:r.dom*f,bas,rn,rd,ex,tot,ded,aj,net:tot-ded+aj}
 }
 const sumP=(a,b)=>{const o={};for(const k in a)o[k]=a[k]+b[k];return o};
@@ -315,11 +315,11 @@ function reportW(w){
   const rows=[{v:["Salario básico de la quincena","","",money(x.bas)]}];
   if(rec.length)rows.push({v:["Recargos (pago adicional)","Horas","Valor hora",""],c:"gh"},...rec.map(v=>({v})));
   if(ext.length)rows.push({v:["Horas extra (pago completo)","Horas","Valor hora",""],c:"gh"},...ext.map(v=>({v})));
-  rows.push({v:["Total devengado","","",money(x.tot)],c:"sub"},{v:["Salud y pensión (8%)","","",money(-x.ded)]});
+  rows.push({v:["Total devengado","","",money(x.tot)],c:"sub"},{v:["Salud y pensión (cuota fija)","","",money(-x.ded)]});
   if(x.aj)rows.push({v:["Ajustes","","",money(x.aj)]});
   rows.push({v:["Neto a pagar","","",money(x.net)],c:"tt"});
   return `<h3>${PL[i]} <small>${RG[i]}</small></h3><p class="dd">${s.n} días de noche · ${s.f} festivos · ${s.d} normales · ${s.l} descansos · ${hh(x.h)} horas trabajadas</p>`+tbl(["Concepto","Horas","Valor hora","Total"],rows,"sl")};
- const T=[P[w][0],P[w][1],sumP(P[w][0],P[w][1])],sr=[{v:["Total devengado",...T.map(x=>money(x.tot))]},{v:["Salud y pensión (8%)",...T.map(x=>money(-x.ded))]}];
+ const T=[P[w][0],P[w][1],sumP(P[w][0],P[w][1])],sr=[{v:["Total devengado",...T.map(x=>money(x.tot))]},{v:["Salud y pensión (cuota fija)",...T.map(x=>money(-x.ded))]}];
  if(T.some(x=>x.aj))sr.push({v:["Ajustes",...T.map(x=>money(x.aj))]});
  sr.push({v:["Neto a pagar",...T.map(x=>money(x.net))],c:"tt"});
  const hd=`<div class="logo rlg" role="img" aria-label="Terpel"></div><h1>EDS ORENSE</h1><p class="rs">Planilla de pago · ${MN[Mo-1]} de ${Y}</p><h2 class="wn">${NM[w]}</h2><p class="vh">Valor de la hora normal: <b>${money(vh)}</b> (salario básico ${money(S.sm)} ÷ 210 horas)</p>`;
@@ -521,11 +521,22 @@ var C=window.EDS_FB,E=window.EDS_EMAIL,U=window.EDS_USER,auth;
 if(!C||!C.apiKey||/PEGAR/.test(C.apiKey)||!window.firebase){say('Falta configurar Firebase (firebase-config.js).')}
 else{
  firebase.initializeApp(C);auth=firebase.auth();
- auth.onAuthStateChanged(function(u){g.style.display=(u&&u.email&&u.email.toLowerCase()===E.toLowerCase())?'none':'flex'});
+ var LIM=10*60*1000,KEY='eds_last',mem=0,thr=0;
+ function stamp(){mem=Date.now();try{localStorage.setItem(KEY,String(mem))}catch(e){}}
+ function last(){var l=0;try{l=+localStorage.getItem(KEY)||0}catch(e){}return Math.max(l,mem)}
+ function expired(){var l=last();return !l||Date.now()-l>LIM}
+ function lock(){if(auth.currentUser){auth.signOut()}document.getElementById('gp').value=''}
+ auth.onAuthStateChanged(function(u){var ok=!!(u&&u.email&&u.email.toLowerCase()===E.toLowerCase());
+  if(ok&&expired()){lock();return}
+  if(ok)stamp();
+  g.style.display=ok?'none':'flex'});
+ ['pointerdown','keydown','touchstart','scroll'].forEach(function(ev){document.addEventListener(ev,function(){if(!auth.currentUser)return;var n=Date.now();if(n-thr>5000){thr=n;stamp()}},{passive:true,capture:true})});
+ document.addEventListener('visibilitychange',function(){if(!auth.currentUser)return;if(document.hidden)stamp();else if(expired())lock()});
+ setInterval(function(){if(auth.currentUser&&expired())lock()},15000);
  document.getElementById('gateForm').addEventListener('submit',function(e){e.preventDefault();
   var u=document.getElementById('gu').value.trim().toLowerCase(),p=document.getElementById('gp').value;
   if(u!==U){say('Usuario o contraseña incorrectos');return}
-  b.disabled=true;say('');
+  b.disabled=true;say('');stamp();
   auth.signInWithEmailAndPassword(E,p).catch(function(er){
    var c=er.code||'';say(/network/.test(c)?'Sin conexión a internet':/too-many/.test(c)?'Demasiados intentos, espera unos minutos':'Usuario o contraseña incorrectos')
   }).then(function(){b.disabled=false})});
